@@ -5,13 +5,13 @@ namespace Dev4Press\Generator\Title;
 use Exception;
 
 class Random {
-	protected $output = 'array';
-	protected $allowed_formats = array(
+	protected string $output = 'array';
+	protected array $allowed_formats = array(
 		'array',
 		'json',
 		'associative_array'
 	);
-	private $lists = array(
+	private array $lists = array(
 		'prefixes' => array(),
 		'suffixes' => array(),
 		'words'    => array()
@@ -20,7 +20,7 @@ class Random {
 	public function __construct() {
 	}
 
-	public static function instance() : Random {
+	public static function instance(): Random {
 		static $_instance = false;
 
 		if ( $_instance === false ) {
@@ -33,7 +33,7 @@ class Random {
 	/**
 	 * @throws \Exception
 	 */
-	public function output( string $output = 'array' ) : Random {
+	public function output( string $output = 'array' ): Random {
 		if ( ! in_array( $output, $this->allowed_formats ) ) {
 			throw new Exception( 'Unrecognized format.' );
 		}
@@ -43,17 +43,17 @@ class Random {
 		return $this;
 	}
 
-	public function set_list( string $name, array $list ) {
+	public function set_list( string $name, array $list ): void {
 		$this->lists[ $name ] = $list;
 	}
 
-	public function generate_title( int $words = 2, bool $with_prefix = true, bool $with_suffix = true ) : string {
+	public function generate_title( int $words = 2, bool $with_prefix = true, bool $with_suffix = true ): string {
 		$list = $this->generate_titles( 1, $words, 'array', $with_prefix, $with_suffix );
 
 		return $list[0];
 	}
 
-	public function generate_titles( int $num = 1, int $words = 2, string $output = '', bool $with_prefix = true, bool $with_suffix = true ) {
+	public function generate_titles( int $num = 1, int $words = 2, string $output = '', bool $with_prefix = true, bool $with_suffix = true ): array|string|false {
 		if ( $num < 1 ) {
 			return array();
 		}
@@ -79,7 +79,14 @@ class Random {
 
 			switch ( $output ) {
 				case 'array':
-					$results[] = trim( $prefix . ' ' . $title . ' ' . $suffix );
+					$parts     = array_filter( array(
+						$prefix,
+						$title,
+						$suffix
+					), static function ( mixed $part ): bool {
+						return $part !== '';
+					} );
+					$results[] = trim( implode( ' ', $parts ) );
 					break;
 				case 'json':
 				case 'associative_array':
@@ -95,12 +102,17 @@ class Random {
 		return $results;
 	}
 
-	private function get_words( int $words = 2 ) : string {
-		$list = array();
-		$keys = array_rand( $this->lists['words'], $words );
+	private function get_words( int $words = 2 ): string {
+		$choices = $this->lists['words'];
+		$count   = min( $words, count( $choices ) );
 
-		foreach ( $keys as $key ) {
-			$list[] = $this->lists['words'][ $key ];
+		if ( $count < 1 ) {
+			return '';
+		}
+
+		$list = array();
+		foreach ( (array) array_rand( $choices, $count ) as $key ) {
+			$list[] = $choices[ $key ];
 		}
 
 		return join( ' ', $list );
